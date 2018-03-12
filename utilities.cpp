@@ -24,15 +24,14 @@ int log2_of_2power(int x){
 }
 
 template <typename T>
-std::vector<T> bit_reversal_interleaver(std::vector<T> sequence){
+void bit_reversal_interleaver(std::vector<T> & sequence){
     int len = sequence.size();
     int m = log2_of_2power(len);
-    std::vector<T> res(len, 0);
+    std::vector<T> temp = sequence;
     for(int i = 0; i < len; i++){
-        res[i] = sequence[bit_reversed(i, m)];
+        sequence[i] = temp[bit_reversed(i, m)];
     }
-    return res;
 }
 
 // explicit installation of template
-template std::vector<int> bit_reversal_interleaver(std::vector<int>);
+template void bit_reversal_interleaver(std::vector<int>&);

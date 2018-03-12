@@ -11,10 +11,9 @@ int main()
         sequence[i] = i;
         std::cout << "sequence " << i << " is " << sequence[i] << std::endl;
     }
-    std::vector<int> interleaved_sequence;
-    interleaved_sequence = bit_reversal_interleaver<int>(sequence);
+    bit_reversal_interleaver<int>(sequence);
     for(int i = 0; i < sequence.size(); i++){
-        std::cout << "interleaved_sequence " << i << " is " << interleaved_sequence[i] << std::endl;
+        std::cout << "interleaved_sequence " << i << " is " << sequence[i] << std::endl;
     }
 
     for(int i = 0; i < sequence.size(); i++){
