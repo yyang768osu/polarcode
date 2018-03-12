@@ -1,45 +1,10 @@
 #include <iostream>
 #include <vector>
-#include <assert.h>
 #include "polar_encoder.hpp"
-
-int bit_reversed(int bit, int bit_width){
-    int res = 0;
-    for(int i = 0; i < bit_width; i++){
-        res <<= 1;
-        res |= (bit & 1);
-        bit >>= 1;
-    }
-    return res;
-}
-
-int log2_of_2power(int x){
-    int res = -1;
-    assert((x & (x-1)) == 0);
-    while(x != 0){
-        x >>= 1;
-        res += 1;
-    }
-    return res;
-}
-
-template <typename T>
-std::vector<T> bit_reversal_interleaver(std::vector<T> sequence){
-    int len = sequence.size();
-    int m = log2_of_2power(len);
-    std::vector<T> res(len, 0);
-    for(int i = 0; i < len; i++){
-        res[i] = sequence[bit_reversed(i, m)];
-    }
-    return res;
-}
+#include "utilities.hpp"
 
 int main()
 {
-    int bit = 10;
-    int rbit = bit_reversed(bit, 4);
-    std::cout << "bit reserve of " << bit << " is " << rbit << std::endl;
-
     std::vector<int> sequence(8,0);
     for(int i = 0; i < sequence.size(); i++){
         sequence[i] = i;
