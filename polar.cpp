@@ -7,36 +7,6 @@
 
 int main()
 {
-    std::vector<int> sequence(8, 0);
-    for (int i = 0; i < sequence.size(); i++)
-    {
-        sequence[i] = i;
-        std::cout << "sequence " << i << " is " << sequence[i] << std::endl;
-    }
-    bit_reversal_interleaver(sequence);
-    for (int i = 0; i < sequence.size(); i++)
-    {
-        std::cout << "interleaved_sequence " << i << " is " << sequence[i] << std::endl;
-    }
-
-    for (int i = 0; i < sequence.size(); i++)
-    {
-        sequence[i] = i % 2;
-        std::cout << "sequence " << i << " is " << sequence[i] << std::endl;
-    }
-    polar_encoder(sequence);
-    for (int i = 0; i < sequence.size(); i++)
-    {
-        std::cout << "sequence " << i << " is " << sequence[i] << std::endl;
-    }
-
-    std::vector<double> llr;
-    llr = bits_to_llr(sequence, 0.5);
-    for (int i = 0; i < sequence.size(); i++)
-    {
-        std::cout << "sequence " << i << " is " << llr[i] << std::endl;
-    }
-
     std::vector<bool> info_location;
     info_location = polar_construction_by_beta_expansion(3, 4);
     for (int i = 0; i < info_location.size(); i++)
@@ -55,4 +25,18 @@ int main()
     {
         std::cout << "u_domain_bits " << i << " is " << u_domain_bits[i] << std::endl;
     }
+
+    polar_encoder(u_domain_bits);
+    for (int i = 0; i < u_domain_bits.size(); i++)
+    {
+        std::cout << "x_domain_bits " << i << " is " << u_domain_bits[i] << std::endl;
+    }
+
+    std::vector<double> llr;
+    llr = bits_to_llr(u_domain_bits, 0.5);
+    for (int i = 0; i < llr.size(); i++)
+    {
+        std::cout << "llr " << i << " is " << llr[i] << std::endl;
+    }
+
 }
