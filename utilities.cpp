@@ -27,11 +27,13 @@ template <typename T>
 void bit_reversal_interleaver(std::vector<T> & sequence){
     int len = sequence.size();
     int m = log2_of_2power(len);
-    std::vector<T> temp = sequence;
     for(int i = 0; i < len; i++){
-        sequence[i] = temp[bit_reversed(i, m)];
+        if(bit_reversed(i, m) > i){
+            std::swap(sequence[i], sequence[bit_reversed(i, m)]);
+        }
     }
 }
 
 // explicit installation of template
 template void bit_reversal_interleaver(std::vector<int>&);
+template void bit_reversal_interleaver(std::vector<double>&);

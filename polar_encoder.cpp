@@ -1,4 +1,5 @@
 #include "polar_encoder.hpp"
+#include "utilities.hpp"
 #include <vector>
 #include <assert.h>
 
