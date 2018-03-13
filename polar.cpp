@@ -43,4 +43,16 @@ int main()
     {
         std::cout << "info_location " << i << " is " << info_location[i] << std::endl;
     }
+
+    std::vector<int> info_bits;
+    info_bits.push_back(1);
+    info_bits.push_back(1);
+    info_bits.push_back(1);
+    info_bits.push_back(1);
+    std::vector<int> u_domain_bits;
+    u_domain_bits = polar_info_to_u_domain_mapping(info_bits, info_location);
+    for (int i = 0; i < u_domain_bits.size(); i++)
+    {
+        std::cout << "u_domain_bits " << i << " is " << u_domain_bits[i] << std::endl;
+    }
 }

@@ -9,7 +9,7 @@ bool comparator(const std::pair<double, int>& l, const std::pair<double, int>& r
 
 std::vector<bool> polar_construction_by_beta_expansion(int m, int k){
     assert(m>0);
-    std::vector<bool> res(1<<m, false);
+    std::vector<bool> info_bit_location(1<<m, false);
     std::vector<std::pair<double, int> > polarization_weight(1<<m, std::pair<double, int>(0.0,0));
     for(int x = 0; x < (1<<m); x++){
         int b = x;
@@ -23,7 +23,8 @@ std::vector<bool> polar_construction_by_beta_expansion(int m, int k){
     }
     std::sort(polarization_weight.begin(), polarization_weight.end(), comparator);
     for(int i = 0; i < k; i++){
-        res[polarization_weight[i].second] = true;
+        info_bit_location[polarization_weight[i].second] = true;
     }
-    return res;
+    return info_bit_location;
 }
+
