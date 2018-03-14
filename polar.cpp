@@ -44,20 +44,12 @@ int main()
     }
     std::cout << std::endl;
 
-    std::vector<int> bits;
-    bits = polar_sc_decoder(llr, info_location);
-    for (int i = 0; i <bits.size(); i++)
-    {
-        std::cout << "bits " << i << " is " << bits[i] << std::endl;
-    }
-    std::cout << std::endl;
-
     PolarScDecoder decoder(3);
-    bits = decoder.polar_sc_decoder(llr, info_location);
+    std::vector<int> bits;
+    bits = decoder.decode(llr, info_location);
     for (int i = 0; i <bits.size(); i++)
     {
         std::cout << "bits " << i << " is " << bits[i] << std::endl;
     }
     std::cout << std::endl;
-
 }

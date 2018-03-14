@@ -12,9 +12,10 @@ class PolarScDecoder{
     std::vector<std::vector<std::vector<int> > > B;
     void recursivelyCalcP(int lambda, int phi);
     void recursivelyCalcB(int lambda, int phi);
+    void P(int lambda, int beta)
 public:
     PolarScDecoder(int m);
-    std::vector<int> polar_sc_decoder(std::vector<double> llr, std::vector<bool> info_mask);
+    std::vector<int> decode(std::vector<double> llr, std::vector<bool> info_mask);
 };
 
 #endif
