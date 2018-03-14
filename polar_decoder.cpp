@@ -4,7 +4,6 @@
 #include "utilities.hpp"
 #include "polar_encoder.hpp"
 #include <cmath>
-#include <iostream>
 
 inline double f(double a, double b)
 {
@@ -70,7 +69,6 @@ std::vector<int> polar_sc_decoder(std::vector<double> llr, std::vector<bool> inf
     for (int phi = 0; phi < n; phi++)
     {
         recursivelyCalcP(m, phi, m, P, B);
-        std::cout << "P " << P[m][0] << std::endl;
         if (info_mask[phi] == 0)
         {
             B[m][0][phi % 2] = 0;

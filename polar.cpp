@@ -36,11 +36,10 @@ int main()
     }
     std::cout << std::endl;
 
-    std::vector<double> llr(u_domain_bits.size(), 0);
-    //llr = bits_to_llr(u_domain_bits, 0.1);
+    std::vector<double> llr;
+    llr = bits_to_llr(u_domain_bits, 0.5);
     for (int i = 0; i < u_domain_bits.size(); i++)
     {
-        llr[i] = u_domain_bits[i] == 0 ? 10 : -10;
         std::cout << "llr " << i << " is " << llr[i] << std::endl;
     }
     std::cout << std::endl;
