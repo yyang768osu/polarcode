@@ -15,6 +15,19 @@ inline double g(double a, double b, int bit)
     return bit == 1 ? b - a : b + a;
 }
 
+double PolarScDecoder::Pget(int lambda, int beta){
+    return P[lambda][beta];
+}
+double & PolarScDecoder::Pset(int lambda, int beta){
+    return P[lambda][beta];
+}
+int PolarScDecoder::Bget(int lambda, int beta, int parity){
+    return B[lambda][beta][parity];
+}
+int & PolarScDecoder::Bset(int lambda, int beta, int parity){
+    return B[lambda][beta][parity];
+}
+
 PolarScDecoder::PolarScDecoder(int m): m(m){
     n = (1<<m);
     for (int lambda = 0; lambda <= m; lambda++)
