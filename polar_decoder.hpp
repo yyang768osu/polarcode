@@ -3,8 +3,6 @@
 
 #include <vector>
 
-std::vector<int> polar_sc_decoder(std::vector<double> llr, std::vector<bool> frozen_mask);
-
 class PolarScDecoder{
     int m;
     int n;

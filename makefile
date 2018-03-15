@@ -1,4 +1,4 @@
-objects = polar_encoder.o utilities.o channel.o polar.o polar_construction.o polar_decoder.o
+objects = polar_encoder.o utilities.o channel.o polar.o polar_construction.o polar_decoder.o polar_list_decoder.o
 default: $(objects)
 	g++ -g -o polar.out $(objects)
 
@@ -19,6 +19,9 @@ polar_construction.o: polar_construction.cpp polar_construction.hpp
 
 polar_decoder.o: polar_decoder.cpp polar_decoder.hpp utilities.hpp polar_encoder.hpp
 	g++ -g -c polar_decoder.cpp
+
+polar_list_decoder.o: polar_list_decoder.cpp polar_list_decoder.hpp utilities.hpp polar_encoder.hpp
+	g++ -g -c polar_list_decoder.cpp
 
 .PHONY: clean
 
