@@ -1,4 +1,5 @@
 #include "polar_list_decoder.hpp"
+#include "utilities.hpp"
 #include <vector>
 #include <cmath>
 #include <assert.h>
@@ -205,4 +206,40 @@ void PolarListDecoder::recursivelyCalcP(int lambda, int phi)
             }
         }
     }
+}
+
+void PolarListDecoder::decode(std::vector<double> llr, std::vector<bool> info_mask)
+{
+    // assert input
+    assert(llr.size()==info_mask.size());
+    assert(llr.size()==n);
+    // apply bit reversal interleaver on the llr; assuming the encoder applied natural order
+    bit_reversal_interleaver(llr);
+    // get the inital path (during which memory is re-initialized)
+    int ini_list = getInitialPath();
+    // populate the llrs in the right most layer of the memory for the intial list
+    for (int beta = 0; beta < n; beta++)
+    {
+        Pset(0,ini_list,beta) = llr[beta];
+    }
+    // main sc-list loop
+    for (int phi = 0; phi < n; phi++)
+    {
+        recursivelyCalcP(m, phi);
+        if (info_mask[phi] == 0)
+        {
+        //    Bset(m,0,phi % 2) = 0;
+        }
+        else
+        {
+        //    Bset(m,0,phi % 2) = Pget(m,0) > 0 ? 0 : 1;
+        }
+        recursivelyCalcB(m, phi);
+    }
+    //std::vector<int> bits(n, 0);
+    //for(int beta=0; beta<n; beta++){
+    //    bits[beta] = Bget(0,beta,0);
+    //}
+    //bit_reversal_interleaver(bits);
+    //polar_encoder(bits);
 }

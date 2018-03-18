@@ -43,9 +43,10 @@ class PolarListDecoder{
     // recursively update B for all active list
     void recursivelyCalcB(int lambda, int phi);
 
+
 public:
     PolarListDecoder(int m, int L);
-    std::vector<int> decode(std::vector<double> llr, std::vector<bool> info_mask);
+    void decode(std::vector<double> llr, std::vector<bool> info_mask);
 };
 
 
