@@ -22,12 +22,14 @@ class PolarListDecoder{
     std::vector<std::vector<int> > arrayReferenceCount;
     // data structure: register the mapping from path to array index
     std::vector<std::vector<int> > pathToArrayIndex;
+    // data structure: path metric
+    std::vector<double> pathMetric;
 
     // initialize data structure
     void buildMemory(void);
     void initializeMemory(void);
 
-    // low level list management function
+    // low level list memory management function
     int getInitialPath(void);
     int clonePath(int list_index);
     void killPath(int list_index);
@@ -43,10 +45,13 @@ class PolarListDecoder{
     // recursively update B for all active list
     void recursivelyCalcB(int lambda, int phi);
 
+    // high level list metric management function
+    void updatePathFrozen(int phase);
+    void updatePathNonFrozen(int phase);
 
 public:
     PolarListDecoder(int m, int L);
-    void decode(std::vector<double> llr, std::vector<bool> info_mask);
+    std::vector<int>  decode(std::vector<double> llr, std::vector<bool> info_mask);
 };
 
 

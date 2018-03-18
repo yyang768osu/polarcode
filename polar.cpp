@@ -5,6 +5,7 @@
 #include "channel.hpp"
 #include "polar_construction.hpp"
 #include "polar_decoder.hpp"
+#include "polar_list_decoder.hpp"
 
 int main()
 {
@@ -37,7 +38,7 @@ int main()
     std::cout << std::endl;
 
     std::vector<double> llr;
-    llr = bits_to_llr(u_domain_bits, 0.5);
+    llr = bits_to_llr(u_domain_bits, 0.79);
     for (int i = 0; i < u_domain_bits.size(); i++)
     {
         std::cout << "llr " << i << " is " << llr[i] << std::endl;
@@ -47,6 +48,15 @@ int main()
     PolarScDecoder decoder(3);
     std::vector<int> bits;
     bits = decoder.decode(llr, info_location);
+    for (int i = 0; i <bits.size(); i++)
+    {
+        std::cout << "bits " << i << " is " << bits[i] << std::endl;
+    }
+    std::cout << std::endl;
+
+
+    PolarListDecoder list_decoder(3,8);
+    bits = list_decoder.decode(llr, info_location);
     for (int i = 0; i <bits.size(); i++)
     {
         std::cout << "bits " << i << " is " << bits[i] << std::endl;

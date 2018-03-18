@@ -1,8 +1,12 @@
 #include "polar_list_decoder.hpp"
 #include "utilities.hpp"
+#include "polar_encoder.hpp"
 #include <vector>
 #include <cmath>
 #include <assert.h>
+#include <utility>
+#include <iostream>
+#include <algorithm>
 
 
 inline double f(double a, double b)
@@ -39,30 +43,38 @@ void PolarListDecoder::buildMemory(void){
     // construct activePath bool array
     activePath = std::vector<bool>(L, false);
     // construct inactiveArrayIndexStack
-    inactiveArrayIndexStack = std::vector<std::stack<int> >(m, std::stack<int>());
-    for(int lambda = 0; lambda < m; lambda++){
+    inactiveArrayIndexStack = std::vector<std::stack<int> >(m+1, std::stack<int>());
+    for(int lambda = 0; lambda <= m; lambda++){
         for(int s = L-1; s >=0; s--){
             inactiveArrayIndexStack[lambda].push(s);
         }
     }
     // construct arrayReferenceCount of P and B
-    arrayReferenceCount = std::vector<std::vector<int> >(m, std::vector<int>(L, 0));
+    arrayReferenceCount = std::vector<std::vector<int> >(m+1, std::vector<int>(L, 0));
     // construct path to B/P array index
-    pathToArrayIndex = std::vector<std::vector<int> >(m, std::vector<int>(L, 0));
+    pathToArrayIndex = std::vector<std::vector<int> >(m+1, std::vector<int>(L, 0));
+    // construct path metric vector
+    pathMetric = std::vector<double>(L, 0);
 }
 
 void PolarListDecoder::initializeMemory(void){
+    // clean up active path 
     while(inactivePathIndexStack.size()) inactivePathIndexStack.pop();
     for(int list = L-1; list >= 0; list--){
         inactivePathIndexStack.push(list);
         activePath[list] = false;
     }
-    for(int lambda = 0; lambda < m; lambda++){
+    // clean up inactiveArrayIndexStack and array reference count
+    for(int lambda = 0; lambda <= m; lambda++){
         while(inactiveArrayIndexStack[lambda].size()) inactiveArrayIndexStack[lambda].pop();
         for(int s = L-1; s >=0; s--){
             inactiveArrayIndexStack[lambda].push(s);
             arrayReferenceCount[lambda][s] = 0;
         }
+    }
+    // clean up path metric
+    for(int list = 0; list < L; list++){
+        pathMetric[list] = 0;
     }
 }
 
@@ -75,7 +87,7 @@ int PolarListDecoder::getInitialPath(void){
     // update activePath
     activePath[initialPathIndex] = true;
     // assign array to path
-    for(int lambda=0; lambda<m; lambda++){
+    for(int lambda=0; lambda<=m; lambda++){
         int array_index = inactiveArrayIndexStack[lambda].top();
         inactiveArrayIndexStack[lambda].pop();
         pathToArrayIndex[lambda][initialPathIndex] = array_index;
@@ -91,7 +103,7 @@ int PolarListDecoder::clonePath(int list_index){
     inactivePathIndexStack.pop();
     activePath[new_list_index] = true;
     // register the array association
-    for(int lambda=0; lambda<m; lambda++){
+    for(int lambda=0; lambda<=m; lambda++){
         int array_index = pathToArrayIndex[lambda][list_index];
         pathToArrayIndex[lambda][new_list_index] = array_index;
         arrayReferenceCount[lambda][array_index] ++;
@@ -104,7 +116,7 @@ void PolarListDecoder::killPath(int list_index){
     inactivePathIndexStack.push(list_index);
     activePath[list_index] = false;
     // clean up the array association
-    for(int lambda=0; lambda<n; lambda++){
+    for(int lambda=0; lambda<=m; lambda++){
         int array_index = pathToArrayIndex[lambda][list_index];
         // decrement the array reference count
         arrayReferenceCount[lambda][array_index] --;
@@ -116,11 +128,13 @@ void PolarListDecoder::killPath(int list_index){
 }
 
 double PolarListDecoder::Pget(int lambda, int list, int beta){
+    assert(activePath[list]);
     int array_index = pathToArrayIndex[lambda][list];
     return P[lambda][array_index][beta];
 }
 
 double & PolarListDecoder::Pset(int lambda, int list, int beta){
+    assert(activePath[list]);
     // obtain the array index corresponds to lambda and list
     int array_index = pathToArrayIndex[lambda][list];
     // if there is only one reference to that array, then simply return value in P
@@ -129,6 +143,9 @@ double & PolarListDecoder::Pset(int lambda, int list, int beta){
     arrayReferenceCount[lambda][array_index] -- ;
     int new_array_index = inactiveArrayIndexStack[lambda].top();
     inactiveArrayIndexStack[lambda].pop();
+    pathToArrayIndex[lambda][list] = new_array_index;
+    assert(arrayReferenceCount[lambda][new_array_index] == 0);
+    arrayReferenceCount[lambda][new_array_index] ++ ;
     // below is supposed to be deep copy; give it the benefit of the doubt
     P[lambda][new_array_index] = P[lambda][array_index];
     B[lambda][new_array_index] = B[lambda][array_index]; 
@@ -136,11 +153,13 @@ double & PolarListDecoder::Pset(int lambda, int list, int beta){
 }
 
 int PolarListDecoder::Bget(int lambda, int list, int beta, int parity){
+    assert(activePath[list]);
     int array_index = pathToArrayIndex[lambda][list];
     return B[lambda][array_index][beta][parity];
 }
 
 int & PolarListDecoder::Bset(int lambda, int list, int beta, int parity){
+    assert(activePath[list]);
     // obtain the array index corresponds to lambda and list
     int array_index = pathToArrayIndex[lambda][list];
     // if there is only one reference to that array, then simply return value in B
@@ -149,6 +168,9 @@ int & PolarListDecoder::Bset(int lambda, int list, int beta, int parity){
     arrayReferenceCount[lambda][array_index] -- ;
     int new_array_index = inactiveArrayIndexStack[lambda].top();
     inactiveArrayIndexStack[lambda].pop();
+    pathToArrayIndex[lambda][list] = new_array_index;
+    assert(arrayReferenceCount[lambda][new_array_index] == 0);
+    arrayReferenceCount[lambda][new_array_index] ++ ;
     // below is supposed to be deep copy; give it the benefit of the doubt
     P[lambda][new_array_index] = P[lambda][array_index];
     B[lambda][new_array_index] = B[lambda][array_index]; 
@@ -208,7 +230,84 @@ void PolarListDecoder::recursivelyCalcP(int lambda, int phi)
     }
 }
 
-void PolarListDecoder::decode(std::vector<double> llr, std::vector<bool> info_mask)
+void  PolarListDecoder::updatePathFrozen(int phase){
+    for(int list=0; list<L; list++){
+        if(!activePath[list]) continue;
+        if(Pget(m,list,0)<0){
+            pathMetric[list] += std::abs(Pget(m,list,0));
+        }
+        Bset(m,list,0,phase % 2) = 0;
+    }
+}
+
+void  PolarListDecoder::updatePathNonFrozen(int phase){
+    // build length 2*L branchPaths vector contaning branched path metrics
+    std::vector<std::pair<double, int> > originalBranchedPath(2*L, std::pair<double,int>());
+    for(int list = 0; list< L; list++){
+        if(activePath[list]){
+            if(Pget(m,list,0)<0){
+                originalBranchedPath[list].first = pathMetric[list] + std::abs(Pget(m,list,0));
+                originalBranchedPath[list+L].first = pathMetric[list];
+            }else{
+                originalBranchedPath[list].first = pathMetric[list];
+                originalBranchedPath[list+L].first = pathMetric[list] + std::abs(Pget(m,list,0));
+            }
+        }else{
+            originalBranchedPath[list].first = -1;
+            originalBranchedPath[list+L].first = -1;
+        }
+        originalBranchedPath[list].second = list;
+        originalBranchedPath[list+L].second = list+L;
+    }
+    std::vector<std::pair<double, int> > sortedBranchedPath = originalBranchedPath;
+    std::sort(sortedBranchedPath.begin(), sortedBranchedPath.end());
+
+    // Among the 2*L branched paths, mark those that survive
+    std::vector<std::vector<bool> > survivedBranchedPath(L, std::vector<bool>(2, false));
+    int numInactivePath = inactivePathIndexStack.size();
+    for(int list_rank = 2*numInactivePath; list_rank< std::min(L+2*numInactivePath, 2*L); list_rank++){
+        int list = sortedBranchedPath[list_rank].second;
+        survivedBranchedPath[list % L][list / L] = true;
+    }
+    // kill the list with none of the branch survived 
+    for(int list = 0; list< L; list++){
+        if(activePath[list]){
+            if(!survivedBranchedPath[list][0] && !survivedBranchedPath[list][1]){
+                killPath(list);
+            }
+        }
+    } 
+    for(int list = 0; list< L; list++){
+        if(survivedBranchedPath[list][0] && survivedBranchedPath[list][1]){
+            int new_list = clonePath(list);
+            Bset(m,list,0,phase % 2) = 0;
+            pathMetric[list] = originalBranchedPath[list].first;
+            Bset(m,new_list,0,phase % 2) = 1;
+            pathMetric[new_list] = originalBranchedPath[list+L].first;
+        }else if(survivedBranchedPath[list][0]){
+            Bset(m,list,0,phase % 2) = 0;
+            pathMetric[list] = originalBranchedPath[list].first;
+        }else if(survivedBranchedPath[list][1]){
+            Bset(m,list,0,phase % 2) = 1;
+            pathMetric[list] = originalBranchedPath[list+L].first;
+        }
+    }
+}
+
+int findMinElementIndex(std::vector<double> input){
+    if(input.size()==0) return -1;
+    int res = 0;
+    double min_so_far = input[0];
+    for(int i = 1; i<input.size();i++){
+        if(input[i] < min_so_far){
+            min_so_far = input[i];
+            res = i;
+        }
+    }
+    return res;
+}
+
+std::vector<int> PolarListDecoder::decode(std::vector<double> llr, std::vector<bool> info_mask)
 {
     // assert input
     assert(llr.size()==info_mask.size());
@@ -229,17 +328,30 @@ void PolarListDecoder::decode(std::vector<double> llr, std::vector<bool> info_ma
         if (info_mask[phi] == 0)
         {
         //    Bset(m,0,phi % 2) = 0;
+            updatePathFrozen(phi);
         }
         else
         {
         //    Bset(m,0,phi % 2) = Pget(m,0) > 0 ? 0 : 1;
+            updatePathNonFrozen(phi);
         }
         recursivelyCalcB(m, phi);
+    
+        std::cout<< "ActivePath at bit " << phi << "  " ;
+        for(int i=0; i<activePath.size();i++) std::cout << activePath[i] << " ";
+        std::cout << std::endl;
+
+        std::cout<< "PathMetric at bit " << phi << "  " ;
+        for(int i=0; i<pathMetric.size();i++) std::cout << pathMetric[i] << " ";
+        std::cout << std::endl;
     }
-    //std::vector<int> bits(n, 0);
-    //for(int beta=0; beta<n; beta++){
-    //    bits[beta] = Bget(0,beta,0);
-    //}
-    //bit_reversal_interleaver(bits);
-    //polar_encoder(bits);
+    int final_list = findMinElementIndex(pathMetric);
+
+    std::vector<int> bits(n, 0);
+    for(int beta=0; beta<n; beta++){
+        bits[beta] = Bget(0,final_list,beta,0);
+    }
+    bit_reversal_interleaver(bits);
+    polar_encoder(bits);
+    return bits;
 }
