@@ -8,9 +8,9 @@ class PolarListDecoder{
     int m;
     int n;
     int L;
-    // data structure: P[lambda][list][branch: 0-->1<<(m-lambda)]
+    // data structure: P[lambda][array][branch: 0-->1<<(m-lambda)]
     std::vector<std::vector<std::vector<double> > > P;
-    // data structure: B[lambda][list][branch: 0-->1<<(m-lambda)][parity]
+    // data structure: B[lambda][array][branch: 0-->1<<(m-lambda)][parity]
     std::vector<std::vector<std::vector<std::vector<int> > > > B;
     // data structure: stack recording inactive path index
     std::stack<int> inactivePathIndexStack;
@@ -26,18 +26,23 @@ class PolarListDecoder{
     // initialize data structure
     void buildMemory(void);
     void initializeMemory(void);
+
+    // low level list management function
     int getInitialPath(void);
-    
-    // recursively update P for all active list
-    void recursivelyCalcP(int lambda, int phi);
-    // recursively update B for all active list
-    void recursivelyCalcB(int lambda, int phi);
+    int clonePath(int list_index);
+    void killPath(int list_index);
     
     // getter and setter for P and B
     double Pget(int lambda, int list, int beta);
     double & Pset(int lambda, int list, int beta);
     int Bget(int lambda, int list, int beta, int parity);
     int & Bset(int lambda, int list, int beta, int parity);
+    
+    // recursively update P for all active list
+    void recursivelyCalcP(int lambda, int phi);
+    // recursively update B for all active list
+    void recursivelyCalcB(int lambda, int phi);
+
 public:
     PolarListDecoder(int m, int L);
     std::vector<int> decode(std::vector<double> llr, std::vector<bool> info_mask);

@@ -82,3 +82,127 @@ int PolarListDecoder::getInitialPath(void){
     }
     return initialPathIndex;
 }
+
+int PolarListDecoder::clonePath(int list_index){
+    // grab an inactive path
+    int new_list_index = inactivePathIndexStack.top();
+    // activate the path
+    inactivePathIndexStack.pop();
+    activePath[new_list_index] = true;
+    // register the array association
+    for(int lambda=0; lambda<m; lambda++){
+        int array_index = pathToArrayIndex[lambda][list_index];
+        pathToArrayIndex[lambda][new_list_index] = array_index;
+        arrayReferenceCount[lambda][array_index] ++;
+    }
+    return new_list_index;
+}
+
+void PolarListDecoder::killPath(int list_index){
+    // deactive the path
+    inactivePathIndexStack.push(list_index);
+    activePath[list_index] = false;
+    // clean up the array association
+    for(int lambda=0; lambda<n; lambda++){
+        int array_index = pathToArrayIndex[lambda][list_index];
+        // decrement the array reference count
+        arrayReferenceCount[lambda][array_index] --;
+        // mark array as inactive if there is no reference left
+        if(arrayReferenceCount[lambda][array_index] == 0){
+            inactiveArrayIndexStack[lambda].push(array_index);
+        }
+    }
+}
+
+double PolarListDecoder::Pget(int lambda, int list, int beta){
+    int array_index = pathToArrayIndex[lambda][list];
+    return P[lambda][array_index][beta];
+}
+
+double & PolarListDecoder::Pset(int lambda, int list, int beta){
+    // obtain the array index corresponds to lambda and list
+    int array_index = pathToArrayIndex[lambda][list];
+    // if there is only one reference to that array, then simply return value in P
+    if(arrayReferenceCount[lambda][array_index]==1) return P[lambda][array_index][beta];
+    // if there is more than one reference to that array, then grab a new array and clone
+    arrayReferenceCount[lambda][array_index] -- ;
+    int new_array_index = inactiveArrayIndexStack[lambda].top();
+    inactiveArrayIndexStack[lambda].pop();
+    // below is supposed to be deep copy; give it the benefit of the doubt
+    P[lambda][new_array_index] = P[lambda][array_index];
+    B[lambda][new_array_index] = B[lambda][array_index]; 
+    return P[lambda][new_array_index][beta];
+}
+
+int PolarListDecoder::Bget(int lambda, int list, int beta, int parity){
+    int array_index = pathToArrayIndex[lambda][list];
+    return B[lambda][array_index][beta][parity];
+}
+
+int & PolarListDecoder::Bset(int lambda, int list, int beta, int parity){
+    // obtain the array index corresponds to lambda and list
+    int array_index = pathToArrayIndex[lambda][list];
+    // if there is only one reference to that array, then simply return value in B
+    if(arrayReferenceCount[lambda][array_index]==1) return B[lambda][array_index][beta][parity];
+    // if there is more than one reference to that array, then grab a new array and clone
+    arrayReferenceCount[lambda][array_index] -- ;
+    int new_array_index = inactiveArrayIndexStack[lambda].top();
+    inactiveArrayIndexStack[lambda].pop();
+    // below is supposed to be deep copy; give it the benefit of the doubt
+    P[lambda][new_array_index] = P[lambda][array_index];
+    B[lambda][new_array_index] = B[lambda][array_index]; 
+    return B[lambda][new_array_index][beta][parity];
+}
+
+void PolarListDecoder::recursivelyCalcB(int lambda, int phi)
+{
+    // if phi is even number, then further update in B is blocked
+    if (phi % 2 == 0)
+        return;
+    // if phi is odd, proceed with update; loop through all branch number
+    for (int beta = 0; beta < (1 << (m - lambda)); beta++)
+    {
+        // loop through all active path
+        for( int list_index = 0; list_index < L; list_index++){
+            if(activePath[list_index]){
+                Bset(lambda - 1,list_index,2 * beta,(phi / 2) % 2) = Bget(lambda,list_index,beta,0) ^ Bget(lambda,list_index,beta,1);
+                Bset(lambda - 1,list_index,2 * beta + 1,(phi / 2) % 2) = Bget(lambda,list_index,beta,1);
+            }
+        }
+    }
+    // keep updating the next layer: layer lambda-1
+    recursivelyCalcB(lambda - 1, phi / 2);
+}
+
+void PolarListDecoder::recursivelyCalcP(int lambda, int phi)
+{
+    // if lambda == 0, then there is no need to calculate, it is always the same copy of LLRs
+    if (lambda == 0) return;
+    // if phi is even, then the next layer P data is not ready yet, recursive into deeper memory
+    if (phi % 2 == 0)
+        recursivelyCalcP(lambda - 1, phi / 2);
+    // if phi is odd, then the next layer P data is ready; if phi is even the next layer P data is also ready because of the two lines of code above
+    // start updating the P
+    // loop through all branchs
+    for (int beta = 0; beta < 1 << (m - lambda); beta++)
+    {
+        // loop through all active paths
+        for (int list_index = 0; list_index < L; list_index++)
+        {
+            if (activePath[list_index])
+            {
+                if (phi % 2 == 0)
+                {
+                    Pset(lambda, list_index, beta) =
+                        f(Pget(lambda - 1, list_index, 2 * beta), Pget(lambda - 1, list_index, 2 * beta + 1));
+                }
+                else
+                {
+                    int bit = Bget(lambda, list_index, beta, 0);
+                    Pset(lambda, list_index, beta) =
+                        g(Pget(lambda - 1, list_index, 2 * beta), Pget(lambda - 1, list_index, 2 * beta + 1), bit);
+                }
+            }
+        }
+    }
+}
