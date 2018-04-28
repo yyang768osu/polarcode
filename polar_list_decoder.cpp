@@ -9,9 +9,13 @@
 #include <algorithm>
 
 
+inline double llr_sign(double x){
+    return (x>0) - (x<0);
+}
+
 inline double f(double a, double b)
 {
-    return ((a > 0) - (a < 0)) * ((b > 0) - (b < 0)) * std::min(std::abs(a), std::abs(b));
+    return llr_sign(a) * llr_sign(b) * std::min(std::abs(a), std::abs(b));
 }
 
 inline double g(double a, double b, int bit)

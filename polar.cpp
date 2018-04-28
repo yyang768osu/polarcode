@@ -55,7 +55,14 @@ int main()
     std::cout << std::endl;
 
 
-    PolarListDecoder list_decoder(3,8);
+    PolarListDecoder list_decoder(3,3);
+    bits = list_decoder.decode(llr, info_location);
+    for (int i = 0; i <bits.size(); i++)
+    {
+        std::cout << "bits " << i << " is " << bits[i] << std::endl;
+    }
+    std::cout << std::endl;
+
     bits = list_decoder.decode(llr, info_location);
     for (int i = 0; i <bits.size(); i++)
     {
