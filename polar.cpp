@@ -38,7 +38,7 @@ int main()
     std::cout << std::endl;
 
     std::vector<double> llr;
-    llr = bits_to_llr(u_domain_bits, 0.79);
+    llr = bits_to_llr(u_domain_bits, 0.70);
     for (int i = 0; i < u_domain_bits.size(); i++)
     {
         std::cout << "llr " << i << " is " << llr[i] << std::endl;
@@ -63,10 +63,4 @@ int main()
     }
     std::cout << std::endl;
 
-    bits = list_decoder.decode(llr, info_location);
-    for (int i = 0; i <bits.size(); i++)
-    {
-        std::cout << "bits " << i << " is " << bits[i] << std::endl;
-    }
-    std::cout << std::endl;
 }

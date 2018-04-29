@@ -8,9 +8,16 @@ class PolarListDecoder{
     int m;
     int n;
     int L;
-    // data structure: P[lambda][array][branch: 0-->1<<(m-lambda)]
+    // data structres:
+    // P, B
+    // inactivePathIndexStack, activePath
+    // inactiveArrayIndexStack, arrayReferenceCount
+    // pathToArrayIndex
+    // pathMetric
+
+    // data structure: P[lambda:0-->m][array:0-->L-1][branch: 0-->1<<(m-lambda)]
     std::vector<std::vector<std::vector<double> > > P;
-    // data structure: B[lambda][array][branch: 0-->1<<(m-lambda)][parity]
+    // data structure: B[lambda:0-->m][array:0-->L-1][branch: 0-->1<<(m-lambda)][parity]
     std::vector<std::vector<std::vector<std::vector<int> > > > B;
     // data structure: stack recording inactive path index
     std::stack<int> inactivePathIndexStack;
@@ -39,6 +46,7 @@ class PolarListDecoder{
     double & Pset(int lambda, int list, int beta);
     int Bget(int lambda, int list, int beta, int parity);
     int & Bset(int lambda, int list, int beta, int parity);
+    void cloneArrayIfNecessary(int lambda, int path);
     
     // recursively update P for all active list
     void recursivelyCalcP(int lambda, int phi);

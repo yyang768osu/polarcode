@@ -30,6 +30,8 @@ PolarListDecoder::PolarListDecoder(int m, int L): m(m), L(L){
 
 void PolarListDecoder::buildMemory(void){
     // construct P and B
+    // P[lambda:0-->m][array:0-->L-1][branch: 0-->1<<(m-lambda)]
+    // B[lambda:0-->m][array:0-->L-1][branch: 0-->1<<(m-lambda)][parity]
     for (int lambda = 0; lambda <= m; lambda++)
     {
         P.push_back(std::vector<std::vector<double> >());
@@ -39,29 +41,47 @@ void PolarListDecoder::buildMemory(void){
             B[lambda].push_back(std::vector<std::vector<int> >(1 << (m - lambda), std::vector<int>(2)));
         }
     }
+
     // construct inactivePathIndexStack
+    // inactivePathIndexStack <-- [L-1, ..., 0]
     assert(inactivePathIndexStack.size()==0);
     for(int s = L-1; s >= 0; s--){
         inactivePathIndexStack.push(s);
     }
+
     // construct activePath bool array
+    // activePath <-- [false]*L
     activePath = std::vector<bool>(L, false);
+
     // construct inactiveArrayIndexStack
+    // inactiveArrayIndexStack[lambda:0-->m] <-- [L-1, ..., 0]
     inactiveArrayIndexStack = std::vector<std::stack<int> >(m+1, std::stack<int>());
     for(int lambda = 0; lambda <= m; lambda++){
         for(int s = L-1; s >=0; s--){
             inactiveArrayIndexStack[lambda].push(s);
         }
     }
+
     // construct arrayReferenceCount of P and B
+    // arrayReferenceCount <-- [lambda:0-->m][0]*L
     arrayReferenceCount = std::vector<std::vector<int> >(m+1, std::vector<int>(L, 0));
+
     // construct path to B/P array index
+    // pathToArrayIndex <-- [lambda:0-->m][0]*L
     pathToArrayIndex = std::vector<std::vector<int> >(m+1, std::vector<int>(L, 0));
+
     // construct path metric vector
     pathMetric = std::vector<double>(L, 0);
 }
 
 void PolarListDecoder::initializeMemory(void){
+    // data structres:
+    // P, B
+    // inactivePathIndexStack, activePath
+    // inactiveArrayIndexStack, arrayReferenceCount
+    // pathToArrayIndex
+    // pathMetric
+
     // clean up active path 
     while(inactivePathIndexStack.size()) inactivePathIndexStack.pop();
     for(int list = L-1; list >= 0; list--){
@@ -100,28 +120,28 @@ int PolarListDecoder::getInitialPath(void){
     return initialPathIndex;
 }
 
-int PolarListDecoder::clonePath(int list_index){
+int PolarListDecoder::clonePath(int path_index){
     // grab an inactive path
-    int new_list_index = inactivePathIndexStack.top();
+    int new_path_index = inactivePathIndexStack.top();
     // activate the path
     inactivePathIndexStack.pop();
-    activePath[new_list_index] = true;
+    activePath[new_path_index] = true;
     // register the array association
     for(int lambda=0; lambda<=m; lambda++){
-        int array_index = pathToArrayIndex[lambda][list_index];
-        pathToArrayIndex[lambda][new_list_index] = array_index;
+        int array_index = pathToArrayIndex[lambda][path_index];
+        pathToArrayIndex[lambda][new_path_index] = array_index;
         arrayReferenceCount[lambda][array_index] ++;
     }
-    return new_list_index;
+    return new_path_index;
 }
 
-void PolarListDecoder::killPath(int list_index){
+void PolarListDecoder::killPath(int path_index){
     // deactive the path
-    inactivePathIndexStack.push(list_index);
-    activePath[list_index] = false;
+    inactivePathIndexStack.push(path_index);
+    activePath[path_index] = false;
     // clean up the array association
     for(int lambda=0; lambda<=m; lambda++){
-        int array_index = pathToArrayIndex[lambda][list_index];
+        int array_index = pathToArrayIndex[lambda][path_index];
         // decrement the array reference count
         arrayReferenceCount[lambda][array_index] --;
         // mark array as inactive if there is no reference left
@@ -131,54 +151,45 @@ void PolarListDecoder::killPath(int list_index){
     }
 }
 
-double PolarListDecoder::Pget(int lambda, int list, int beta){
-    assert(activePath[list]);
-    int array_index = pathToArrayIndex[lambda][list];
+double PolarListDecoder::Pget(int lambda, int path, int beta){
+    assert(activePath[path]);
+    int array_index = pathToArrayIndex[lambda][path];
     return P[lambda][array_index][beta];
 }
 
-double & PolarListDecoder::Pset(int lambda, int list, int beta){
-    assert(activePath[list]);
-    // obtain the array index corresponds to lambda and list
-    int array_index = pathToArrayIndex[lambda][list];
-    // if there is only one reference to that array, then simply return value in P
-    if(arrayReferenceCount[lambda][array_index]==1) return P[lambda][array_index][beta];
-    // if there is more than one reference to that array, then grab a new array and clone
-    arrayReferenceCount[lambda][array_index] -- ;
-    int new_array_index = inactiveArrayIndexStack[lambda].top();
-    inactiveArrayIndexStack[lambda].pop();
-    pathToArrayIndex[lambda][list] = new_array_index;
-    assert(arrayReferenceCount[lambda][new_array_index] == 0);
-    arrayReferenceCount[lambda][new_array_index] ++ ;
-    // below is supposed to be deep copy; give it the benefit of the doubt
-    P[lambda][new_array_index] = P[lambda][array_index];
-    B[lambda][new_array_index] = B[lambda][array_index]; 
-    return P[lambda][new_array_index][beta];
+double & PolarListDecoder::Pset(int lambda, int path, int beta){
+    assert(activePath[path]);
+    cloneArrayIfNecessary(lambda, path);
+    int array_index = pathToArrayIndex[lambda][path];
+    return P[lambda][array_index][beta];
 }
 
-int PolarListDecoder::Bget(int lambda, int list, int beta, int parity){
-    assert(activePath[list]);
-    int array_index = pathToArrayIndex[lambda][list];
+int PolarListDecoder::Bget(int lambda, int path, int beta, int parity){
+    assert(activePath[path]);
+    int array_index = pathToArrayIndex[lambda][path];
     return B[lambda][array_index][beta][parity];
 }
 
-int & PolarListDecoder::Bset(int lambda, int list, int beta, int parity){
-    assert(activePath[list]);
-    // obtain the array index corresponds to lambda and list
-    int array_index = pathToArrayIndex[lambda][list];
-    // if there is only one reference to that array, then simply return value in B
-    if(arrayReferenceCount[lambda][array_index]==1) return B[lambda][array_index][beta][parity];
-    // if there is more than one reference to that array, then grab a new array and clone
+int & PolarListDecoder::Bset(int lambda, int path, int beta, int parity){
+    assert(activePath[path]); 
+    cloneArrayIfNecessary(lambda, path);
+    int array_index = pathToArrayIndex[lambda][path];
+    return B[lambda][array_index][beta][parity];
+}
+
+void PolarListDecoder::cloneArrayIfNecessary(int lambda, int path){
+    int array_index = pathToArrayIndex[lambda][path];
+    if(arrayReferenceCount[lambda][array_index] == 1) return;
+
     arrayReferenceCount[lambda][array_index] -- ;
     int new_array_index = inactiveArrayIndexStack[lambda].top();
     inactiveArrayIndexStack[lambda].pop();
-    pathToArrayIndex[lambda][list] = new_array_index;
+    pathToArrayIndex[lambda][path] = new_array_index;
     assert(arrayReferenceCount[lambda][new_array_index] == 0);
     arrayReferenceCount[lambda][new_array_index] ++ ;
-    // below is supposed to be deep copy; give it the benefit of the doubt
+    // below is supposed to be deep copy;
     P[lambda][new_array_index] = P[lambda][array_index];
     B[lambda][new_array_index] = B[lambda][array_index]; 
-    return B[lambda][new_array_index][beta][parity];
 }
 
 void PolarListDecoder::recursivelyCalcB(int lambda, int phi)
@@ -190,10 +201,10 @@ void PolarListDecoder::recursivelyCalcB(int lambda, int phi)
     for (int beta = 0; beta < (1 << (m - lambda)); beta++)
     {
         // loop through all active path
-        for( int list_index = 0; list_index < L; list_index++){
-            if(activePath[list_index]){
-                Bset(lambda - 1,list_index,2 * beta,(phi / 2) % 2) = Bget(lambda,list_index,beta,0) ^ Bget(lambda,list_index,beta,1);
-                Bset(lambda - 1,list_index,2 * beta + 1,(phi / 2) % 2) = Bget(lambda,list_index,beta,1);
+        for( int path_index = 0; path_index < L; path_index++){
+            if(activePath[path_index]){
+                Bset(lambda - 1,path_index,2 * beta,(phi / 2) % 2) = Bget(lambda,path_index,beta,0) ^ Bget(lambda,path_index,beta,1);
+                Bset(lambda - 1,path_index,2 * beta + 1,(phi / 2) % 2) = Bget(lambda,path_index,beta,1);
             }
         }
     }
@@ -214,20 +225,20 @@ void PolarListDecoder::recursivelyCalcP(int lambda, int phi)
     for (int beta = 0; beta < 1 << (m - lambda); beta++)
     {
         // loop through all active paths
-        for (int list_index = 0; list_index < L; list_index++)
+        for (int path_index = 0; path_index < L; path_index++)
         {
-            if (activePath[list_index])
+            if (activePath[path_index])
             {
                 if (phi % 2 == 0)
                 {
-                    Pset(lambda, list_index, beta) =
-                        f(Pget(lambda - 1, list_index, 2 * beta), Pget(lambda - 1, list_index, 2 * beta + 1));
+                    Pset(lambda, path_index, beta) =
+                        f(Pget(lambda - 1, path_index, 2 * beta), Pget(lambda - 1, path_index, 2 * beta + 1));
                 }
                 else
                 {
-                    int bit = Bget(lambda, list_index, beta, 0);
-                    Pset(lambda, list_index, beta) =
-                        g(Pget(lambda - 1, list_index, 2 * beta), Pget(lambda - 1, list_index, 2 * beta + 1), bit);
+                    int bit = Bget(lambda, path_index, beta, 0);
+                    Pset(lambda, path_index, beta) =
+                        g(Pget(lambda - 1, path_index, 2 * beta), Pget(lambda - 1, path_index, 2 * beta + 1), bit);
                 }
             }
         }
@@ -235,12 +246,12 @@ void PolarListDecoder::recursivelyCalcP(int lambda, int phi)
 }
 
 void  PolarListDecoder::updatePathFrozen(int phase){
-    for(int list=0; list<L; list++){
-        if(!activePath[list]) continue;
-        if(Pget(m,list,0)<0){
-            pathMetric[list] += std::abs(Pget(m,list,0));
+    for(int path=0; path<L; path++){
+        if(!activePath[path]) continue;
+        if(Pget(m,path,0)<0){
+            pathMetric[path] += std::abs(Pget(m,path,0));
         }
-        Bset(m,list,0,phase % 2) = 0;
+        Bset(m,path,0,phase % 2) = 0;
     }
 }
 
