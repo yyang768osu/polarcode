@@ -219,7 +219,8 @@ void PolarListDecoder::recursivelyCalcP(int lambda, int phi)
     // if phi is even, then the next layer P data is not ready yet, recursive into deeper memory
     if (phi % 2 == 0)
         recursivelyCalcP(lambda - 1, phi / 2);
-    // if phi is odd, then the next layer P data is ready; if phi is even the next layer P data is also ready because of the two lines of code above
+    // if phi is odd, then the next layer P data is ready
+    // if phi is even the next layer P data is also ready because of the two lines of code above
     // start updating the P
     // loop through all branchs
     for (int beta = 0; beta < 1 << (m - lambda); beta++)
@@ -257,6 +258,9 @@ void  PolarListDecoder::updatePathFrozen(int phase){
 
 void  PolarListDecoder::updatePathNonFrozen(int phase){
     // build length 2*L branchPaths vector contaning branched path metrics
+    // originalBranchedPath[list] corresponds to list extended with 0
+    // originalBranchedPath[list+L] corresponds to list extended with 1
+    // originalBranchedPath stores the tuple with (value, index)
     std::vector<std::pair<double, int> > originalBranchedPath(2*L, std::pair<double,int>());
     for(int list = 0; list< L; list++){
         if(activePath[list]){
@@ -280,6 +284,9 @@ void  PolarListDecoder::updatePathNonFrozen(int phase){
     // Among the 2*L branched paths, mark those that survive
     std::vector<std::vector<bool> > survivedBranchedPath(L, std::vector<bool>(2, false));
     int numInactivePath = inactivePathIndexStack.size();
+    // the number of survived paths is std::min( 2*(L-numInactivePath), L)
+    // the first 2*numInactivePath corresponds to the inactive path with metric of -1
+    // and thus we should traverse std::min( 2*(L-numInactivePath), L) + 2*numInactivePath
     for(int list_rank = 2*numInactivePath; list_rank< std::min(L+2*numInactivePath, 2*L); list_rank++){
         int list = sortedBranchedPath[list_rank].second;
         survivedBranchedPath[list % L][list / L] = true;
@@ -292,6 +299,7 @@ void  PolarListDecoder::updatePathNonFrozen(int phase){
             }
         }
     } 
+    // the above for loop cannot be merged the the one below because we need to kill path first to make room for path expansion
     for(int list = 0; list< L; list++){
         if(survivedBranchedPath[list][0] && survivedBranchedPath[list][1]){
             int new_list = clonePath(list);
