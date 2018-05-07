@@ -4,6 +4,7 @@
 #include <vector>
 #include <stack>
 
+//https://arxiv.org/abs/1206.0050
 class PolarListDecoder{
     int m;
     int n;

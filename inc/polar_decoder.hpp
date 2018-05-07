@@ -3,6 +3,7 @@
 
 #include <vector>
 
+// Implementation follows https://arxiv.org/abs/1206.0050
 class PolarScDecoder{
     int m;
     int n;
