@@ -8,6 +8,10 @@
 #include <iostream>
 #include <algorithm>
 
+int PolarListDecoder::get_n(){
+    return n;
+}
+
 
 inline double llr_sign(double x){
     return (x>0) - (x<0);

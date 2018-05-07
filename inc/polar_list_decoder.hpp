@@ -7,8 +7,8 @@
 //https://arxiv.org/abs/1206.0050
 class PolarListDecoder{
     int m;
-    int n;
     int L;
+    int n;
     // data structres:
     // P, B
     // inactivePathIndexStack, activePath
@@ -59,6 +59,7 @@ class PolarListDecoder{
     void updatePathNonFrozen(int phase);
 
 public:
+    int get_n();
     PolarListDecoder(int m, int L);
     std::vector<int>  decode(std::vector<double> llr, std::vector<bool> info_mask);
 };

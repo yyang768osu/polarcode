@@ -59,11 +59,16 @@ class CMakeBuild(build_ext):
 setup(
     name='polarcode',
     version='0.0.1',
-    author='Dean Moldovan',
-    author_email='dean0x7d@gmail.com',
-    description='A test project using pybind11 and CMake',
+    author='Yang Yang',
+    author_email='yyang.ohiostate@gmail.com',
+    description='A project for Polar code encoder and decoder',
     long_description='',
     ext_modules=[CMakeExtension('polarcode')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
 )
+
+# original author to this setup.py template
+#    author='Dean Moldovan',
+#    author_email='dean0x7d@gmail.com',
+#    description='A test project using pybind11 and CMake',
