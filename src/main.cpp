@@ -7,7 +7,7 @@ int add(int i, int j) {
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(cmake_example, m) {
+PYBIND11_MODULE(polarcode, m) {
     m.def("add", &add);
     m.def("subtract", [](int i, int j) { return i - j; });
     py::class_<PolarListDecoder>(m, "PolarListDecoder")
